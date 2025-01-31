@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: simple-rollout
+  name: simple-canary
 spec:
   revisionHistoryLimit: 1
   replicas: 10
