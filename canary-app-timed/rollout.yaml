@@ -20,6 +20,8 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+          name: http
+          protocol: TCP        
   strategy:
     canary:
       stableService: summer-k8s-service-stable
