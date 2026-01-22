@@ -14,9 +14,9 @@ spec:
       canaryService: nginx-canary
       stableService: nginx-stable
       steps:
-      - setWeight: 0
-      - setCanaryScale:
-          weight: 100
+      - setWeight: 10
       - analysis:
           templates:
           - templateName: two-metrics
+      # - pause: {duration: 30s}          
+      # - setWeight: 100          
