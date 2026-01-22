@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: awesome-rollout
+  namespace: test-namespace
+spec:
+  replicas: 2
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-deployment
+  strategy:
+    canary:
+      canaryService: nginx-canary
+      stableService: nginx-stable
+      analysis:
+        templates:
+          - templateName: acceptance-test
+            clusterScope: true
+      steps:
+        - setWeight: 20
+        - pause: {duration: 10s}
+        - setWeight: 40
+        - pause: {duration: 10s}
+        - setWeight: 80
+        - pause: {duration: 10s}
