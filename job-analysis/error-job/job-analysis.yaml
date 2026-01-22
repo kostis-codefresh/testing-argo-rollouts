@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterAnalysisTemplate
 metadata:
-  name: acceptance-test
+  name: error-test
 spec:
   metrics:
-    - name: acceptance-test
+    - name: no-image-metric
       provider:
         job:
           spec:

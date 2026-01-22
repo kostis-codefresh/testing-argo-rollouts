@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: awesome-rollout
-  namespace: test-namespace
+  namespace: test-background
 spec:
   replicas: 2
   workloadRef:
@@ -15,7 +15,7 @@ spec:
       stableService: nginx-stable
       analysis:
         templates:
-          - templateName: acceptance-test
+          - templateName: background-test
             clusterScope: true
       steps:
         - setWeight: 20

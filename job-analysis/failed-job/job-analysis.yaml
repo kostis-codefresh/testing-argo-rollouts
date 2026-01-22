@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: fail-test
+spec:
+  metrics:
+    - name: exit-with-one
+      provider:
+        job:
+          spec:
+            backoffLimit: 0
+            completions: 1
+            template:
+              spec:
+                containers:
+                - name: sleep
+                  image: alpine:3.8
+                  command: [sh, -c]
+                  args: [sleep 5 && exit 1]
+                restartPolicy: Never
