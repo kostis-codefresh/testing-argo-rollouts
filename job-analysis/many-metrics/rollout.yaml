@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: my-rollout
+  namespace: test-multiple
+spec:
+  replicas: 2
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-deployment
+  strategy:
+    canary:
+      canaryService: nginx-canary
+      stableService: nginx-stable
+      steps:
+      - setWeight: 0
+      - setCanaryScale:
+          weight: 100
+      - analysis:
+          templates:
+          - templateName: two-metrics

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: awesome-rollout
+  name: my-rollout
   namespace: test-background
 spec:
   replicas: 2
