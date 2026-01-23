@@ -19,7 +19,7 @@ spec:
               - name: sleep
                 image: alpine:3.8
                 command: [sh, -c]
-                args: [sleep 10 && exit 1]
+                args: [sleep 30 && exit 1]
               restartPolicy: Never
           backoffLimit: 0
   - name: webmetric

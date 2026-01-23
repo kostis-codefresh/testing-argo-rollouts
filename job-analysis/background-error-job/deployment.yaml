@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-deployment
-  namespace: test-background
+  namespace: test-error-background
 spec:
   replicas: 0
   selector:

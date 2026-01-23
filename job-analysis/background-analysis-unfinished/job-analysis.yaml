@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterAnalysisTemplate
 metadata:
-  name: background-test
+  name: background-test-long
 spec:
   metrics:
     - name: wait-15
@@ -17,5 +17,5 @@ spec:
                 - name: sleep
                   image: alpine:3.8
                   command: [sh, -c]
-                  args: [sleep 15 && exit 0]
+                  args: [sleep 1000]
                 restartPolicy: Never

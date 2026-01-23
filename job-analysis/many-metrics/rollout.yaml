@@ -18,5 +18,5 @@ spec:
       - analysis:
           templates:
           - templateName: two-metrics
-      # - pause: {duration: 30s}          
-      # - setWeight: 100          
+      - pause: {duration: 30s}          
+      - setWeight: 100          

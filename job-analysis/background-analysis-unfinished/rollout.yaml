@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: my-rollout
-  namespace: test-error
+  namespace: test-background-unfinished
 spec:
   replicas: 2
   workloadRef:
@@ -13,12 +13,12 @@ spec:
     canary:
       canaryService: nginx-canary
       stableService: nginx-stable
+      analysis:
+        templates:
+          - templateName: background-test-long
+            clusterScope: true
       steps:
         - setWeight: 20
-        - analysis:
-            templates:
-            - templateName: error-test 
-              clusterScope: true       
         - pause: {duration: 10s}
         - setWeight: 40
         - pause: {duration: 10s}

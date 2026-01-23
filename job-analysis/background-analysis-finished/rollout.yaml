@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: my-rollout
-  namespace: test-background
+  namespace: test-background-finished
 spec:
   replicas: 2
   workloadRef:
@@ -15,7 +15,7 @@ spec:
       stableService: nginx-stable
       analysis:
         templates:
-          - templateName: background-test
+          - templateName: background-test-short
             clusterScope: true
       steps:
         - setWeight: 20

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: error-test
+spec:
+  metrics:
+    - name: no-image-metric
+      provider:
+        job:
+          spec:
+            backoffLimit: 2
+            completions: 1
+            template:
+              spec:
+                containers:
+                  - name: test
+                    image: docker.io/library/lol:5 # this image does not exist.
+                    command: ["bash"]
+                    args: ["-c", "echo 'Hello world! going to exit with 0 (success).' && sleep 10 && exit 0"]
+                restartPolicy: Never
