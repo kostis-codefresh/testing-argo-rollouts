@@ -15,7 +15,7 @@ spec:
       stableService: nginx-stable
       analysis:
         templates:
-          - templateName: error-test
+          - templateName: error-test-background
             clusterScope: true
       steps:
         - setWeight: 20

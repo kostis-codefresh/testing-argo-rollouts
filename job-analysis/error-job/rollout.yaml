@@ -17,7 +17,7 @@ spec:
         - setWeight: 20
         - analysis:
             templates:
-            - templateName: error-test 
+            - templateName: error-test-inline
               clusterScope: true       
         - pause: {duration: 10s}
         - setWeight: 40

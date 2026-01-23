@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterAnalysisTemplate
 metadata:
-  name: error-test
+  name: error-test-background
 spec:
   metrics:
     - name: no-image-metric
       provider:
         job:
           spec:
-            backoffLimit: 2
+            backoffLimit: 1
             completions: 1
             template:
               spec:
