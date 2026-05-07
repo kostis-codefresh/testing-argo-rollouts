@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:1.9.8 # update it to 1.19.0 to trigger a rollout, as the first time will only create the pods.
+          image: argoproj/rollouts-demo:red # update it to rollouts-demo:blue to trigger a rollout, as the first time will only create the pods.
           ports:
             - containerPort: 8080
