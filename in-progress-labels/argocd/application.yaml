@@ -18,7 +18,12 @@ spec:
     namespace: gatewayapi-demo
   syncPolicy:
     automated:
-      selfHeal: true
+      # selfHeal is deliberately off so the canary can be driven out-of-band with
+      # `kubectl argo rollouts set image`. With selfHeal on, Argo CD reverts the
+      # Rollout spec back to git within seconds and the canary never starts.
+      # It is not needed for scenario A: #208 is about diff/sync status, and
+      # selfHeal only matters for the weight-reversion variant (out of scope).
+      selfHeal: false
       prune: true
     syncOptions:
       - CreateNamespace=true
@@ -29,3 +34,12 @@ spec:
       kind: HTTPRoute
       jqPathExpressions:
         - select(.metadata.labels["rollouts.argoproj.io/gatewayapi-canary"] == "in-progress") | .spec.rules
+    # Not part of #208 — just noise removal. The Rollouts controller injects
+    # rollouts-pod-template-hash into the selector of the stable and canary
+    # Services, so both go OutOfSync after the first canary. Unlike the
+    # expression above this one is unconditional, so it evaluates identically
+    # on the live and the desired object.
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/selector/rollouts-pod-template-hash
