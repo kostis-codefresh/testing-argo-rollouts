@@ -1,0 +1,31 @@
+---
+# Scenario A from issue #208: the ignoreDifferences snippet recommended in the
+# plugin's docs/quick-start.md, with the two sync options the reporter says do
+# NOT help (ServerSideApply + RespectIgnoreDifferences).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gatewayapi-in-progress-labels
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kostis-codefresh/testing-argo-rollouts
+    targetRevision: HEAD
+    path: in-progress-labels/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gatewayapi-demo
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      jqPathExpressions:
+        - select(.metadata.labels["rollouts.argoproj.io/gatewayapi-canary"] == "in-progress") | .spec.rules

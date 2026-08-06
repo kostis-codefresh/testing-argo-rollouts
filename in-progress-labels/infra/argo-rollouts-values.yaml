@@ -1,0 +1,13 @@
+---
+# Argo Rollouts helm values for reproducing gatewayapi-plugin issue #208.
+#
+# providerRBAC.providers.gatewayAPI defaults to true in chart 2.41.1 and already grants
+# gateway.networking.k8s.io httproutes get/list/watch/update, which is what the plugin's
+# Update() call path needs. No extra ClusterRole required.
+controller:
+  trafficRouterPlugins:
+    - name: "argoproj-labs/gatewayAPI"
+      location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/v0.16.0/gatewayapi-plugin-linux-amd64"
+
+  logging:
+    level: debug

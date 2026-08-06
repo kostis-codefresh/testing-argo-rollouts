@@ -1,0 +1,25 @@
+---
+# The object under test. Note there are deliberately NO weights here: git never
+# expresses a weight, so every backendRefs[].weight seen on the live object was
+# written by the Gateway API plugin.
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1
+metadata:
+  name: argo-rollouts-http-route
+spec:
+  parentRefs:
+    - name: eg
+  hostnames:
+    - "demo.example.com"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: argo-rollouts-stable-service
+          kind: Service
+          port: 80
+        - name: argo-rollouts-canary-service
+          kind: Service
+          port: 80
