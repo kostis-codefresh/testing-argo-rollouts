@@ -1,14 +1,22 @@
 ---
-# The object under test. Note there are deliberately NO weights here: git never
-# expresses a weight, so every backendRefs[].weight seen on the live object was
-# written by the Gateway API plugin.
+# The object under test.
+#
+# Every field the Gateway API CRD would otherwise default is written out
+# explicitly (parentRefs group/kind, backendRefs group, and both weights).
+# Without that, Argo CD reports a permanent OutOfSync at rest that has nothing
+# to do with issue #208: git would say `parentRefs: [{name: eg}]` and no
+# weights, while the API server stores group/kind and `weight: 1`, and Argo CD
+# is not doing a server-side diff. Pinning the defaults keeps the baseline
+# clean so the only diff that can appear is the one the plugin creates.
 kind: HTTPRoute
 apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: argo-rollouts-http-route
 spec:
   parentRefs:
-    - name: eg
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: eg
   hostnames:
     - "demo.example.com"
   rules:
@@ -17,9 +25,13 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: argo-rollouts-stable-service
+        - group: ""
           kind: Service
+          name: argo-rollouts-stable-service
           port: 80
-        - name: argo-rollouts-canary-service
+          weight: 100
+        - group: ""
           kind: Service
+          name: argo-rollouts-canary-service
           port: 80
+          weight: 0
