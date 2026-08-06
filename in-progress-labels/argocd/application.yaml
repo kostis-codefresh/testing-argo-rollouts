@@ -34,6 +34,19 @@ spec:
       kind: HTTPRoute
       jqPathExpressions:
         - select(.metadata.labels["rollouts.argoproj.io/gatewayapi-canary"] == "in-progress") | .spec.rules
+    # --- the fix (see results/findings.md section 6b) --------------------
+    # Replace the jqPathExpressions above with the one below and both symptoms
+    # go away: the app stays Synced through the canary, and a mid-canary sync
+    # no longer reverts the weights. It is symmetric because the path exists on
+    # the live *and* the desired object, and it stays narrow enough that real
+    # changes to the rules are still reconciled.
+    #
+    #   jqPathExpressions:
+    #     - .spec.rules[].backendRefs[].weight
+    #
+    # managedFieldsManagers: [gatewayAPI] also fixes both symptoms but is a
+    # trap: the plugin's full-object Update() claims all of .spec.rules
+    # atomically, so Argo CD stops seeing any rules drift, permanently.
     # Not part of #208 — just noise removal. The Rollouts controller injects
     # rollouts-pod-template-hash into the selector of the stable and canary
     # Services, so both go OutOfSync after the first canary. Unlike the

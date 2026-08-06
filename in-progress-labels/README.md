@@ -106,9 +106,30 @@ kubectl apply -f argocd/application.yaml
 argocd app get gatewayapi-in-progress-labels
 ```
 
+`selfHeal` is deliberately **off**. The Rollout spec is owned by Argo CD, so with `selfHeal: true` a
+`kubectl argo rollouts set image` is reverted within seconds and the canary never starts. It is not needed to
+reproduce #208 — as section 3 of the findings shows, a single explicit `argocd app sync` is enough to cause the
+weight reversion, `selfHeal` merely removes the need for a human to trigger it.
+
 **Baseline check:** the app must be `Synced` / `Healthy` here, with the rollout at 5/5 and no
 `gatewayapi-canary` label on the HTTPRoute. If it is already `OutOfSync` at rest, something else is wrong and
 nothing below means anything.
+
+> **Gotcha, unrelated to #208 — empty weights.** If `manifests/httproute.yaml` omits `backendRefs[].weight`
+> (or `parentRefs[].group`/`kind`, or `backendRefs[].group`), the app is permanently `OutOfSync` at rest before any
+> canary runs: the API server defaults `weight` to `1` and fills in the group/kind, Argo CD is not doing a
+> server-side diff, and the defaulted fields register as a difference. Confusingly `argocd app diff` renders
+> *nothing* in that state. It reproduces with `ignoreDifferences` removed entirely, which is how you can tell it
+> apart from the real issue. The manifest here pins every defaulted field so the baseline is clean.
+>
+> **Second unrelated gotcha — service selector hashes.** The Rollouts controller injects
+> `rollouts-pod-template-hash` into `.spec.selector` of the stable and canary Services, so both go `OutOfSync` after
+> the first canary. `argocd/application.yaml` carries a second `ignoreDifferences` entry for it. Unlike the #208
+> expression that one is unconditional, so it evaluates identically on live and desired — which is exactly the
+> property the label-based snippet lacks.
+>
+> With both out of the way the whole Application is `Synced` at rest, so the `in-progress` label is the only thing
+> that can move it.
 
 ### 5. Confirm the data plane
 
@@ -156,7 +177,41 @@ for i in (seq 12)
 end
 ```
 
-Scenario A predicts the weights hold and only the sync status is wrong.
+### 7b. The controlled test — is it the label, or the weights?
+
+Patch the live rules back to git's exact values while the label is still there, then remove the label. Nothing but
+the label changes between the two readings:
+
+```bash
+kubectl -n gatewayapi-demo patch httproute argo-rollouts-http-route --type=json \
+  -p '[{"op":"replace","path":"/spec/rules/0/backendRefs/0/weight","value":100},
+       {"op":"replace","path":"/spec/rules/0/backendRefs/1/weight","value":0}]'
+argocd app get gatewayapi-in-progress-labels --hard-refresh | grep HTTPRoute   # OutOfSync
+
+kubectl -n gatewayapi-demo label httproute argo-rollouts-http-route \
+  'rollouts.argoproj.io/gatewayapi-canary-'
+argocd app get gatewayapi-in-progress-labels --hard-refresh | grep HTTPRoute   # Synced
+```
+
+### 7c. The weight reversion
+
+Still parked at `setWeight: 50`, sync the HTTPRoute once and watch the canary lose all its traffic:
+
+```bash
+argocd app sync gatewayapi-in-progress-labels \
+  --resource 'gateway.networking.k8s.io:HTTPRoute:argo-rollouts-http-route'
+
+kubectl -n gatewayapi-demo get rollout rollouts-demo \
+  -o jsonpath='{.status.canary.weights.canary.weight}{"\n"}'          # 50
+kubectl -n gatewayapi-demo get httproute argo-rollouts-http-route \
+  -o jsonpath='{.spec.rules[0].backendRefs[*].weight}{"\n"}'          # 100 0
+for i in $(seq 40); do curl -s -H 'Host: demo.example.com' localhost:8080/color; echo; done | sort | uniq -c
+kubectl -n gatewayapi-demo get httproute argo-rollouts-http-route --show-managed-fields -o json | \
+  jq -r '.metadata.managedFields[] | "\(.manager)\t\(.operation)\trules=\((.fieldsV1|tostring)|contains("rules"))"'
+```
+
+The plugin will **not** put the weights back — it has no watch on the HTTPRoute and only writes during a Rollout
+reconcile.
 
 ### 8. Promote and re-measure
 
@@ -171,6 +226,13 @@ argocd app get gatewayapi-in-progress-labels
 
 The second promote is what settles the issue's "permanent, even at rest" wording: if the app goes back to `Synced`
 once the label is gone, the `OutOfSync` is scoped to the canary window rather than permanent.
+
+Note that a *paused* canary is not "at rest" — there are still two ReplicaSets and traffic is split, so the rollout is
+in progress by definition. The at-rest test is the fully-promoted state: one active ReplicaSet, one version.
+
+```bash
+kubectl -n gatewayapi-demo get rs -o json | jq -r '.items[] | select(.spec.replicas>0) | .metadata.name'
+```
 
 ## Findings
 
